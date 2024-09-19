@@ -1,0 +1,182 @@
+'use strict';
+
+/////////////////////////////////
+//selecting elements
+const player0El = document.querySelector('.player--0'); //selects player 1 screen
+const player1El = document.querySelector('.player--1'); //selects player 2 screen
+const score0El = document.querySelector('#score--0'); //selects plyer 1 aggregate score display
+const score1El = document.getElementById('score--1'); //selects layer 2 aggregate score display
+
+const current0El = document.getElementById('current--0'); //select current player 1 score ('0')
+const current1El = document.getElementById('current--1'); //select current  player 2 score ('1')
+
+const diceEl = document.querySelector('.dice'); //select the image element
+const btnNew = document.querySelector('.btn--new'); //select the new game element
+const btnRoll = document.querySelector('.btn--roll'); //select the roll button element
+const btnHold = document.querySelector('.btn--hold'); //select the hold button element
+
+//starting conditions
+/*
+score0El.textContent = 0; //element score should be 0
+score1El.textContent = 0; //element score should be 0
+diceEl.classList.add('hidden'); //to hide the dice image, we first selected the image element, then we created a hidden class in the css with its display set to none, then we added the hidden class to the Image(html) using js...this applies the dispaly property to the image...image bcoms hidden/not displayed.
+
+const scores = [0, 0]; //this scores variable will hold the aggregated scores of the 2 players, so we made the score variable an array, remember an array stores many values inside one variable...so the scores is a variable which stores the scores of both players...player 1 score will be stored at position 0 i.e scores[0] whil player 2 scores will be stored in position 1 i.e score[1]...we set the initial values inside the array as 0 for score[0]/position 0/player 1 and also 0 for score[1]/position 1/player 2...this means that the initial score in the scores array at the begining of the game is 0...when each of the player/the active player clicks the hold button for the first time the score of that player becomes his current score plus 0...subsequently the scores array is updated following this exact logic
+
+let currentScore = 0; // so we set initial current score to be 0 for both players, we used let as we will keep updating the current score as the dice is rolled...
+
+let activePlayer = 0; // we set the default player to player 1....(current--${activeplayer}).i.e current--0 which is player 1, we could have just use current0El but this cannot allow us switch players dynamically, so we solved this problm by using a placeholder which represents current--, now hen we say activePlayer = 0 we mean current--0 i.e player 1, and when we say activePlayer = 1 we mean current--1 which means palyer 2. we set activeplayer = 0 bcos we want player 1 to be the starting player by default.
+
+let playing = true;
+*/
+
+let scores, currentScore, activePlayer, playing; //declaring the variables outside but they are empty...scoping
+
+const init = function () {
+  scores = [0, 0];
+  currentScore = 0;
+  activePlayer = 0;
+  playing = true;
+
+  score0El.textContent = 0;
+  score1El.textContent = 0;
+  current0El.textContent = 0;
+  current1El.textContent = 0;
+
+  diceEl.classList.add('hidden');
+  player0El.classList.remove('player--winner'); //jonas used the variable shorcut here not query.selector...
+  player1El.classList.remove('player--winner'); //jonas removed 4 both player, he cud av set to active player
+  player0El.classList.add('player--active'); //set player 1 as active player...give player 1 d animation
+  player1El.classList.remove('player--active');
+};
+init(); //when our starting conditions where not inside a function, the game page immediately it loads recognize the condition and adjust/implements the conditions...now that we have placed the starting conditions inside a function, for the page to recognize our code immmediately it loads we must first call the function, if we do not call it the starting conditions will just be in the function but cannot be implemented...so always call it in this situation...we decided to place our starting condition in a function bcos we needed to use them again when setting the new game functionality, so rather than repeat ourselve like i did in my own solution we simply set a function then call the function...DRY.
+
+//a reuseable piece of cold which we call whenever we want to set the active player sccore to 0 and switch the active player
+const switchPlayer = function () {
+  document.getElementById(`current--${activePlayer}`).textContent = 0;
+  currentScore = 0;
+  activePlayer = activePlayer === 0 ? 1 : 0;
+  player0El.classList.toggle('player--active');
+  player1El.classList.toggle('player--active');
+};
+/////////////////////////////////////
+
+/////////////////////////////////////////////
+//reacting to a rolled dice..when the roll dice button is clicked, a random number between 1 to 6 is generated by js, the dice image with the generated number appears, the generated number is added/stored to the current score, if the generate number is 1, we switch the player and the current score rests to 0...
+
+//rolling dice functionality...reaction when the dice button is clicked
+//we set the dice here bcos we want a new random dice number to be generated each time the roll button is clicked...
+//remove the hidden class from the image, i.e display image
+//each time we roll the dice we want an image which has the generated number to be displayed...we know dat in html, it is the src attribute that determines the selected image, so we manipulate the src using js...we use js to select the image, set its src with a placeholder that has a value detrmined by the generated dice...so the src is the image file directory but the file directory number will be determined by the genrated dice number..so if the dice number is 4, the src will be image number 4 whic will be the die image with 4 on it...
+//we want the cuurent dice number to be stored in the current score if the dice number is not 1, where it is 1 we want the current score to become 0, then the next player bcoms the active player...first we have to set the intial current score..we set it outside of the function because if it is inside the handler function, each time the dice is rolled the current score will be set to initial score(0)...so we have to set it outside of the handler function..this just makes the initial current score stay the same...it will only keep changing as more dice numbers are added to it...in order to switch player when 1 is rolled, we needed to define the 2 players in the game, define the current active player then switch the active player between the two players...
+
+btnRoll.addEventListener('click', function () {
+  if (playing) {
+    //we dont need to set it to true bcos playing is a boolean, we want the roll button  to react to clicking if only we are still playing..when there is a winner the roll dice should not react to clicking...playing will be false when there is a winner..wher this happens the function handler will not run...
+
+    //1. generating a random dice roll
+    const dice = Math.trunc(Math.random() * 6 + 1);
+
+    //2. display dice
+    diceEl.classList.remove('hidden');
+    diceEl.src = `dice-${dice}.png`;
+
+    //3.check fo rolled 1: if true, switch to next next player...
+    if (dice !== 1) {
+      //add current dice number to current score
+      currentScore += dice; //if dice number is not 1, update current score by adding the dice number to it..
+      //currentScore = currentScore + dice;
+
+      // we need to assign the current score to the active player...for now say player 1
+      //current0El.textContent = currentScore; //we use js to manipulate the current--0 element to display the updated current score..always remember .textcontext role...check below
+      document.getElementById(`current--${activePlayer}`).textContent =
+        currentScore; //instead of using currentE0 which assigns the current score to player 0, we used a dynamic function to assign the current score to the current active player...so when the activeplayer = 0 i.e player 1(current--0), the current score is for player 1, where activeplayer = 1,i.e player 2 (current--1) the current score will be for player 2.
+    } else {
+      //implement the switch function by...set the current score display to 0 for the current player,reset current score for both players, switch active player...
+      switchPlayer(); //we stored the switch function in a variable then used the variable to implement the switch..we could have hard code the switch code as seen below...
+      /*
+      //display the current score of the current player to 0
+      //document.getElementById(`current--${activePlayer}`).textContent = currentScore; //it is the current player whose current score should display 0..OR
+      document.getElementById(`current--${activePlayer}`).textContent = 0;
+      //current0El.textContent = currentScore;//we set the current player dynamically
+  
+      //set the current score of the switched player to zero
+      currentScore = 0; //if dice rolled is 1 current score should be 0..so when we switch player the new active player score starts from 0 , then as we roll the dice the current score bcoms 0 + dice rolled...
+  
+      //switch to the next player/reassigning the active player
+  
+      activePlayer = activePlayer === 0 ? 1 : 0; //if the active player is 0, change active player to 1 else (i.e activeplayer is not 0) change active player to 0...so when we roll the dice immediately sfter we roll one, th score is addedto that of the switched player...
+  
+      //switching the player animation... the player--active class has the css styling that animates the active player...when a 1 is rolled, the active player switches, we want the animation to switch also. so we use js to toggle the class...by default we assigned the css to player--1 element(player0El) bcos it is the initial starting/active player...so wen 1 is rolled player--2 bcoms active..at that instance js will toggle the player--active class, js will remove the class from player0El element and add it to player1El element (the new active player)..this will make player 2 the animated player...when player 2 rolls a 1, the active player will be reasigned to player 1, then js will add the class to player 1 and remove it from player 2...thus player  1 becomes animated...just like that, it goes on and on.
+      player0El.classList.toggle('player--active'); //add when player 2 rolls 1, remove when player rolls 1
+      player1El.classList.toggle('player--active'); //add when player 1 rolls 1, remove when player 2 rolls 1
+      */
+    }
+  }
+});
+///////////////////////////////////////////
+
+///////////////////////////////////////
+//setting the hold functionality...creating the reaction when the hold button is clicked...
+btnHold.addEventListener('click', function () {
+  if (playing) {
+    //1. add current score to active player score...each layer score will be the initial player score plus the current score at the point where the hold button is clicked...the initial score for both players are 0 as set in the array...
+
+    //scores[0] = scores[0] + currentScore or scores[1] = scores[1] + currentScore...but we have to set the updated score dynamically....i.e it is the activeplayer that clicks the hold button, therefore the active player score should be aggregated...we did that below
+
+    scores[activePlayer] += currentScore; //this code updates the score held in the array each time the hold button is clicked by a player...if player 1 clicks hold, his score in the scores array at that instance is the score in the array before the hold was clicked plus his current score.
+
+    document.getElementById(`score--${activePlayer}`).textContent =
+      scores[activePlayer]; //display the aggregated score...the aggregated score will be the value held in the array...so we said textContent = scores[0] or score[1]...i.e
+    //2. check if players score is >= 100
+    if (scores[activePlayer] >= 100) {
+      //if true finish the game...declare player winner..we want the css styling for when a player wins to be implemented..this styling is contained in the player--winner class..so we select the active player who has reached 100 scores then used js to add the needed class to it...we also need to remove the player--active styling for the active player who just won...so basically where a player wins the game we use js to remove the active styling and add/effect the winner styling...
+      playing = false; // the btn handler will not run where playing is not true
+      document
+        .querySelector(`.player--${activePlayer}`) //selects the active player who wins,
+        .classList.add('player--winner'); //adds the winner css style
+      document
+        .querySelector(`.player--${activePlayer}`)
+        .classList.remove('player--active');
+
+      diceEl.classList.add('hidden'); //hide the dice when there is a winner...
+    } else {
+      //if not true switch to the next  player...here we simply implement the swtich code used in the previous function...
+      switchPlayer(); //we used the variable which stored the switch function...or we hard code the switch function again below
+      /*
+     document.getElementById(`current--${activePlayer}`).textContent = 0;
+     currentScore = 0;
+     activePlayer = activePlayer === 0 ? 1 : 0;
+     player0El.classList.toggle('player--active');
+     player1El.classList.toggle('player--active');
+    
+     //instead of using the switch code above when the dice is rolled and also implementing the switch code when the hold key is clicked..we can declare a variable which stores this switch code then use this variable when we want to switch the player...
+     */
+    }
+  }
+});
+///////////////////////////////
+
+///////////////////////////////////////
+//setting the new game functionality
+/*
+//my personal solution...it works but...
+btnNew.addEventListener('click', function () {
+  document
+    .querySelector(`.player--${activePlayer}`) //selects the active player who wins,
+    .classList.remove('player--winner'); //remove the winner css style
+    activePlayer = 0;
+  document
+    .querySelector(`.player--0`)//set palyer 1 as active player after restart
+    .classList.add('player--active');
+  currentScore = 0;
+  playing = true;
+  scores[0] = 0;
+  scores[1] = 0;
+  document.getElementById(`current--0`).textContent = currentScore;
+  document.getElementById(`current--1`).textContent = currentScore;//Jonas usd the thier variables
+  document.getElementById(`score--0`).textContent = scores[0];
+  document.getElementById(`score--1`).textContent = scores[1];
+});
+*/
+btnNew.addEventListener('click', init); //check the init function to see comparison to ur solution...
